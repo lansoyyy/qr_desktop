@@ -236,7 +236,104 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 60,
                     width: 350,
                     label: 'CONFIRM',
-                    onPressed: () {},
+                    onPressed: () {
+                      AwesomeDialog(
+                        width: 400,
+                        context: context,
+                        dialogType: DialogType.info,
+                        animType: AnimType.rightSlide,
+                        title: 'Ticketing Confirmation',
+                        desc: 'Are you sure you want to continue?',
+                        btnCancelOnPress: () {},
+                        btnOkOnPress: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return Dialog(
+                                child: SizedBox(
+                                  width: 300,
+                                  height: 275,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            const SizedBox(),
+                                            TextBold(
+                                              text: 'Ticket Details',
+                                              fontSize: 18,
+                                              color: Colors.black,
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              icon: const Icon(
+                                                Icons.close,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 5,
+                                        ),
+                                        const Divider(),
+                                        const SizedBox(
+                                          height: 5,
+                                        ),
+                                        TextBold(
+                                            text: 'Customer Name:\nLance Olana',
+                                            fontSize: 16,
+                                            color: Colors.black),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        TextRegular(
+                                            text: 'Number of Persons: 1',
+                                            fontSize: 14,
+                                            color: Colors.grey),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        TextRegular(
+                                            text: 'Type of Ride: Ferris Wheel',
+                                            fontSize: 14,
+                                            color: Colors.grey),
+                                        const SizedBox(
+                                          height: 10,
+                                        ),
+                                        TextRegular(
+                                            text: 'Total Amount: ₱1,000.php',
+                                            fontSize: 14,
+                                            color: Colors.grey),
+                                        const SizedBox(
+                                          height: 30,
+                                        ),
+                                        const LinearProgressIndicator(),
+                                        TextRegular(
+                                          text: 'Printing ticket...',
+                                          fontSize: 12,
+                                          color: Colors.black,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ).show();
+                    },
                   ),
                 ],
               ),
