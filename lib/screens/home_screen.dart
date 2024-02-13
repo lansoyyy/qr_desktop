@@ -1,7 +1,6 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:qr_scanner/services/add_rides.dart';
 import 'package:qr_scanner/utils/colors.dart';
 import 'package:qr_scanner/widgets/button_widget.dart';
 import 'package:qr_scanner/widgets/text_widget.dart';
@@ -16,10 +15,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final name = TextEditingController();
-
-  List ageFilters = ['No filter', '0-18', '19-59', '60 and above'];
-
-  String selectedAgeFilter = 'No filter';
 
   var _dropValue = 0;
   int persons = 1;
@@ -246,6 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         desc: 'Are you sure you want to continue?',
                         btnCancelOnPress: () {},
                         btnOkOnPress: () {
+                          addRide(name.text, persons, ride, 0);
                           showDialog(
                             context: context,
                             builder: (context) {
@@ -291,21 +287,22 @@ class _HomeScreenState extends State<HomeScreen> {
                                           height: 5,
                                         ),
                                         TextBold(
-                                            text: 'Customer Name:\nLance Olana',
+                                            text:
+                                                'Customer Name:\n${name.text}',
                                             fontSize: 16,
                                             color: Colors.black),
                                         const SizedBox(
                                           height: 10,
                                         ),
                                         TextRegular(
-                                            text: 'Number of Persons: 1',
+                                            text: 'Number of Persons: $persons',
                                             fontSize: 14,
                                             color: Colors.grey),
                                         const SizedBox(
                                           height: 10,
                                         ),
                                         TextRegular(
-                                            text: 'Type of Ride: Ferris Wheel',
+                                            text: 'Type of Ride: $ride',
                                             fontSize: 14,
                                             color: Colors.grey),
                                         const SizedBox(
