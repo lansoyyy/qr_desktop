@@ -50,6 +50,8 @@ dependencies:
   printing: ^5.9.3
   path_provider:
   intl:
+  qr_flutter:
+  widgets_to_image:
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-Future addRide(String name, int persons, String ride, int total) async {
+Future<String> addRide(String name, int persons, String ride, int total) async {
   final docUser = FirebaseFirestore.instance.collection('Rides').doc();
 
   final json = {
@@ -17,4 +17,6 @@ Future addRide(String name, int persons, String ride, int total) async {
   };
 
   await docUser.set(json);
+
+  return docUser.id;
 }

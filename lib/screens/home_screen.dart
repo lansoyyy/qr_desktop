@@ -1,10 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:qr_scanner/services/add_rides.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:qr_scanner/utils/colors.dart';
 import 'package:qr_scanner/widgets/button_widget.dart';
 import 'package:qr_scanner/widgets/text_widget.dart';
@@ -13,6 +14,10 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'dart:io' as io;
+
+import 'package:widgets_to_image/widgets_to_image.dart';
+
+import '../services/add_rides.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -277,14 +282,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(
                     height: 50,
                   ),
-                  ride == '' || name.text == ''
+                  fee == 0 || name.text == '' || persons == 0
                       ? const SizedBox()
                       : ButtonWidget(
                           fontSize: 28,
                           height: 60,
                           width: 350,
                           label: 'CONFIRM',
-                          onPressed: () {
+                          onPressed: () async {
                             AwesomeDialog(
                               width: 400,
                               context: context,
@@ -293,16 +298,55 @@ class _HomeScreenState extends State<HomeScreen> {
                               title: 'Ticketing Confirmation',
                               desc: 'Are you sure you want to continue?',
                               btnCancelOnPress: () {},
-                              btnOkOnPress: () {
-                                addRide(
+                              btnOkOnPress: () async {
+                                String docId = await addRide(
                                     name.text, persons, ride, fee * persons);
-                                generatePdf(
-                                    name.text, persons, ride, fee.toDouble());
+                                showDialog(
+                                    context: context,
+                                    builder: ((context) {
+                                      return AlertDialog(
+                                        title: TextBold(
+                                            text: 'QR Code Preview',
+                                            fontSize: 18,
+                                            color: Colors.black),
+                                        content: SizedBox(
+                                          height: 300,
+                                          width: 300,
+                                          child: WidgetsToImage(
+                                            controller: controller,
+                                            child: QrImageView(
+                                              data: docId,
+                                              version: QrVersions.auto,
+                                              size: 200.0,
+                                            ),
+                                          ),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: (() async {
+                                                Navigator.pop(context);
+                                                final bytes =
+                                                    await controller.capture();
 
-                                setState(() {
-                                  name.clear();
-                                  persons = 0;
-                                });
+                                                generatePdf(
+                                                    name.text,
+                                                    persons,
+                                                    ride,
+                                                    fee.toDouble(),
+                                                    bytes!);
+
+                                                setState(() {
+                                                  name.clear();
+                                                  persons = 1;
+                                                });
+                                              }),
+                                              child: TextBold(
+                                                  text: 'Continue',
+                                                  fontSize: 14,
+                                                  color: Colors.black)),
+                                        ],
+                                      );
+                                    }));
                               },
                             ).show();
                           },
@@ -316,12 +360,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void generatePdf(String name, int persons, String ride, double fee) async {
+  WidgetsToImageController controller = WidgetsToImageController();
+// to save image bytes of widget
+  Uint8List? bytes;
+
+  void generatePdf(String name, int persons, String ride, double fee,
+      Uint8List image) async {
     final pdf = pw.Document();
 
-    String cdate1 = DateFormat("MMMM, dd, yyyy").format(DateTime.now());
-
-    final image = await imageFromAssetBundle('assets/images/logo.png');
+    String cdate1 = DateFormat("MMMM dd, yyyy").format(DateTime.now());
 
     pdf.addPage(
       pw.MultiPage(
@@ -335,9 +382,9 @@ class _HomeScreenState extends State<HomeScreen> {
         orientation: pw.PageOrientation.portrait,
         build: (context) => [
           pw.Center(
-            child: pw.Image(image, height: 120, width: 120),
+            child: pw.Image(pw.MemoryImage(image), height: 120, width: 120),
           ),
-          pw.SizedBox(height: 2),
+          pw.SizedBox(height: 5),
           pw.Center(
             child: pw.Text(
               style: const pw.TextStyle(fontSize: 8),
@@ -360,7 +407,7 @@ class _HomeScreenState extends State<HomeScreen> {
           pw.Divider(),
           pw.SizedBox(height: 2),
           pw.Center(
-            child: pw.Text('Thank you for visiting!',
+            child: pw.Text('All Rights Reserved',
                 style: const pw.TextStyle(fontSize: 10)),
           ),
           pw.SizedBox(height: 250, width: 250, child: pw.Center()),
