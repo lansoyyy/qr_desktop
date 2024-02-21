@@ -303,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     name.text, persons, ride, fee * persons);
                                 showDialog(
                                     context: context,
+                                    barrierDismissible: false,
                                     builder: ((context) {
                                       return AlertDialog(
                                         title: TextBold(
