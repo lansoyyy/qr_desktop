@@ -1,11 +1,18 @@
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_scanner/services/add_rides.dart';
 import 'package:qr_scanner/utils/colors.dart';
 import 'package:qr_scanner/widgets/button_widget.dart';
 import 'package:qr_scanner/widgets/text_widget.dart';
 import 'package:qr_scanner/widgets/textfield_widget.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'dart:io' as io;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -270,7 +277,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(
                     height: 50,
                   ),
-                  fee == 0 || name.text == ''
+                  ride == '' || name.text == ''
                       ? const SizedBox()
                       : ButtonWidget(
                           fontSize: 28,
@@ -289,95 +296,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               btnOkOnPress: () {
                                 addRide(
                                     name.text, persons, ride, fee * persons);
-                                showDialog(
-                                  context: context,
-                                  builder: (context) {
-                                    return Dialog(
-                                      child: SizedBox(
-                                        width: 300,
-                                        height: 275,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(10.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(
-                                                height: 10,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const SizedBox(),
-                                                  TextBold(
-                                                    text: 'Ticket Details',
-                                                    fontSize: 18,
-                                                    color: Colors.black,
-                                                  ),
-                                                  IconButton(
-                                                    onPressed: () {
-                                                      Navigator.pop(context);
-                                                    },
-                                                    icon: const Icon(
-                                                      Icons.close,
-                                                      color: Colors.red,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 5,
-                                              ),
-                                              const Divider(),
-                                              const SizedBox(
-                                                height: 5,
-                                              ),
-                                              TextBold(
-                                                  text:
-                                                      'Customer Name:\n${name.text}',
-                                                  fontSize: 16,
-                                                  color: Colors.black),
-                                              const SizedBox(
-                                                height: 10,
-                                              ),
-                                              TextRegular(
-                                                  text:
-                                                      'Number of Persons: $persons',
-                                                  fontSize: 14,
-                                                  color: Colors.grey),
-                                              const SizedBox(
-                                                height: 10,
-                                              ),
-                                              TextRegular(
-                                                  text: 'Type of Ride: $ride',
-                                                  fontSize: 14,
-                                                  color: Colors.grey),
-                                              const SizedBox(
-                                                height: 10,
-                                              ),
-                                              TextRegular(
-                                                  text:
-                                                      'Total Amount: ₱1,000.php',
-                                                  fontSize: 14,
-                                                  color: Colors.grey),
-                                              const SizedBox(
-                                                height: 30,
-                                              ),
-                                              const LinearProgressIndicator(),
-                                              TextRegular(
-                                                text: 'Printing ticket...',
-                                                fontSize: 12,
-                                                color: Colors.black,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
+                                generatePdf(
+                                    name.text, persons, ride, fee.toDouble());
+
+                                setState(() {
+                                  name.clear();
+                                  persons = 0;
+                                });
                               },
                             ).show();
                           },
@@ -389,5 +314,64 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void generatePdf(String name, int persons, String ride, double fee) async {
+    final pdf = pw.Document();
+
+    String cdate1 = DateFormat("MMMM, dd, yyyy").format(DateTime.now());
+
+    final image = await imageFromAssetBundle('assets/images/logo.png');
+
+    pdf.addPage(
+      pw.MultiPage(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        pageFormat: const PdfPageFormat(
+          72 * (72 / 25.4),
+          297 * (72 / 25.4),
+          marginLeft: 15,
+          marginRight: 15,
+        ),
+        orientation: pw.PageOrientation.portrait,
+        build: (context) => [
+          pw.Center(
+            child: pw.Image(image, height: 120, width: 120),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Center(
+            child: pw.Text(
+              style: const pw.TextStyle(fontSize: 8),
+              cdate1,
+            ),
+          ),
+          pw.Center(
+            child: pw.Text('Amusement Park',
+                style: const pw.TextStyle(fontSize: 14)),
+          ),
+          pw.SizedBox(height: 2),
+          pw.Text('Customer Name: $name',
+              style: const pw.TextStyle(fontSize: 8)),
+          pw.Text('Number of Persons: $persons',
+              style: const pw.TextStyle(fontSize: 8)),
+          pw.Text('Type of Ride: $ride ($fee)',
+              style: const pw.TextStyle(fontSize: 8)),
+          pw.Text('Total Fee: ${fee * persons}.00php',
+              style: const pw.TextStyle(fontSize: 8)),
+          pw.Divider(),
+          pw.SizedBox(height: 2),
+          pw.Center(
+            child: pw.Text('Thank you for visiting!',
+                style: const pw.TextStyle(fontSize: 10)),
+          ),
+          pw.SizedBox(height: 250, width: 250, child: pw.Center()),
+        ],
+      ),
+    );
+
+    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+
+    final output = await getTemporaryDirectory();
+    final file = io.File("${output.path}/receipt.pdf");
+    await file.writeAsBytes(await pdf.save());
   }
 }
